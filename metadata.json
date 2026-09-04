@@ -1,0 +1,6 @@
+{
+  "name": "Re-Life Foundation",
+  "description": "Re-Life Foundation is a rehabilitation and de-addiction centre in Borbhiti, Nagaon, Assam, providing supportive care, counselling, wellness activities and recovery-focused assistance.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

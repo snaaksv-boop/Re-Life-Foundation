@@ -1,0 +1,42 @@
+{
+  "entities": {
+    "siteContent": {
+      "title": "SiteContent",
+      "description": "Customizable content items for Re-Life Foundation including about, orgInfo, founder, and branding",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "data": { "type": "object" }
+      },
+      "required": ["id"]
+    },
+    "inquiry": {
+      "title": "Inquiry",
+      "description": "Patient and family contact and emergency admission inquiries",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string", "maxLength": 100 },
+        "phone": { "type": "string", "maxLength": 25 },
+        "email": { "type": "string", "maxLength": 100 },
+        "location": { "type": "string", "maxLength": 100 },
+        "concern": { "type": "string", "maxLength": 500 },
+        "urgency": { "type": "string" },
+        "status": { "type": "string" },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["name", "phone", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/siteContent/{docId}": {
+      "schema": "siteContent",
+      "description": "Configurable site content sections"
+    },
+    "/inquiries/{inquiryId}": {
+      "schema": "inquiry",
+      "description": "Contact and admission submissions"
+    }
+  }
+}
