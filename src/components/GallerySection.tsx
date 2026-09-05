@@ -1,17 +1,16 @@
 import React, { useState } from 'react';
 import { useContent } from '../context/ContentContext';
 import { GalleryPhoto } from '../types';
-import { X, ChevronLeft, ChevronRight, Maximize2, Plus, Sparkles, Trash2 } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Maximize2, Sparkles } from 'lucide-react';
 
 interface GallerySectionProps {
-  onOpenAdminUpload: () => void;
+  onOpenAdminUpload?: () => void;
 }
 
-export const GallerySection: React.FC<GallerySectionProps> = ({ onOpenAdminUpload }) => {
-  const { gallery, deleteGalleryPhoto } = useContent();
+export const GallerySection: React.FC<GallerySectionProps> = () => {
+  const { gallery } = useContent();
   const [activeCategory, setActiveCategory] = useState<string>('All');
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
-  const [actionNotice, setActionNotice] = useState<string>('');
 
   const categories: Array<GalleryPhoto['category']> = [
     'All',
@@ -42,17 +41,6 @@ export const GallerySection: React.FC<GallerySectionProps> = ({ onOpenAdminUploa
     setSelectedPhotoIndex((selectedPhotoIndex - 1 + filteredPhotos.length) % filteredPhotos.length);
   };
 
-  const handleDeletePhoto = (photo: GalleryPhoto, e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    const confirmed = window.confirm(`Are you sure you want to delete the photo "${photo.title}" from the gallery?`);
-    if (!confirmed) return;
-
-    deleteGalleryPhoto(photo.id);
-    setSelectedPhotoIndex(null);
-    setActionNotice(`Photo "${photo.title}" deleted.`);
-    setTimeout(() => setActionNotice(''), 3500);
-  };
-
   const currentPhoto = selectedPhotoIndex !== null ? filteredPhotos[selectedPhotoIndex] : null;
 
   const isNewPhoto = (photo: GalleryPhoto): boolean => {
@@ -68,38 +56,17 @@ export const GallerySection: React.FC<GallerySectionProps> = ({ onOpenAdminUploa
     <section id="gallery" className="py-20 sm:py-24 bg-slate-50 border-t border-slate-200/80 relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Action feedback toast */}
-        {actionNotice && (
-          <div className="mb-6 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-semibold flex items-center justify-between">
-            <span>{actionNotice}</span>
-            <button onClick={() => setActionNotice('')} className="text-amber-700 hover:text-amber-900">✕</button>
-          </div>
-        )}
-
-        {/* Section Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
-          <div>
-            <span className="text-xs font-extrabold tracking-widest uppercase text-teal-800 bg-teal-100/70 px-3 py-1 rounded-full border border-teal-200">
-              CENTRE GLIMPSES
-            </span>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mt-3 font-heading">
-              Photo Gallery
-            </h2>
-            <p className="text-base text-slate-700 mt-2">
-              Authentic glimpses of our rehabilitation campus, group sessions, and healing spaces in Borbhiti, Nagaon.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={onOpenAdminUpload}
-              className="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-bold text-teal-900 bg-teal-100/80 hover:bg-teal-200 rounded-xl border border-teal-300 transition-colors cursor-pointer shadow-xs"
-              title="Add new photos or manage gallery"
-            >
-              <Plus className="w-3.5 h-3.5 text-teal-800" />
-              <span>Add / Manage Photos</span>
-            </button>
-          </div>
+        {/* Section Header - Clean, public visitor view without admin controls */}
+        <div className="max-w-3xl mb-10">
+          <span className="text-xs font-extrabold tracking-widest uppercase text-teal-800 bg-teal-100/70 px-3 py-1 rounded-full border border-teal-200">
+            CENTRE GLIMPSES
+          </span>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mt-3 font-heading">
+            Photo Gallery
+          </h2>
+          <p className="text-base text-slate-700 mt-2">
+            Authentic glimpses of our rehabilitation campus, group sessions, and healing spaces in Borbhiti, Nagaon.
+          </p>
         </div>
 
         {/* Category Filter Pills */}
@@ -141,7 +108,7 @@ export const GallerySection: React.FC<GallerySectionProps> = ({ onOpenAdminUploa
                     referrerPolicy="no-referrer"
                   />
 
-                  {/* Top Badges (always visible) */}
+                  {/* Top Badges */}
                   <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none z-10">
                     <div className="flex items-center gap-1.5">
                       {isNewlyAdded && (
@@ -160,19 +127,9 @@ export const GallerySection: React.FC<GallerySectionProps> = ({ onOpenAdminUploa
                         {photo.category}
                       </span>
                       
-                      {/* Action buttons on card: Delete & Zoom */}
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={(e) => handleDeletePhoto(photo, e)}
-                          className="w-8 h-8 rounded-full bg-rose-600 hover:bg-rose-700 active:scale-95 text-white flex items-center justify-center shadow-lg transition-transform cursor-pointer"
-                          title="Delete Photo"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                        <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white">
-                          <Maximize2 className="w-4 h-4" />
-                        </div>
+                      {/* Zoom Icon */}
+                      <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white">
+                        <Maximize2 className="w-4 h-4" />
                       </div>
                     </div>
 
@@ -203,7 +160,7 @@ export const GallerySection: React.FC<GallerySectionProps> = ({ onOpenAdminUploa
             className="relative max-w-5xl w-full max-h-[92vh] flex flex-col items-center"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Top Bar with Title, Delete Button & Close Button */}
+            {/* Top Bar with Title & Close Button */}
             <div className="w-full flex items-center justify-between text-white pb-3 mb-2 border-b border-white/10 gap-3">
               <div className="min-w-0 pr-2">
                 <div className="flex items-center gap-2">
@@ -222,17 +179,6 @@ export const GallerySection: React.FC<GallerySectionProps> = ({ onOpenAdminUploa
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
-                {/* Delete Photo Button in Lightbox */}
-                <button
-                  type="button"
-                  onClick={() => handleDeletePhoto(currentPhoto)}
-                  className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs font-semibold rounded-xl flex items-center gap-1.5 shadow-md transition-all cursor-pointer"
-                  title="Delete this photo from gallery"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Delete Photo</span>
-                </button>
-
                 {/* Close Button */}
                 <button
                   onClick={() => setSelectedPhotoIndex(null)}

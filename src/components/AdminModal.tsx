@@ -55,6 +55,8 @@ export const AdminModal: React.FC<AdminModalProps> = ({
     updateProgram,
     facilities,
     updateFacility,
+    addFacility,
+    deleteFacility,
     gallery,
     addGalleryPhoto,
     deleteGalleryPhoto,
@@ -170,7 +172,12 @@ export const AdminModal: React.FC<AdminModalProps> = ({
 
   // Facility photo upload
   const facilityFileInputRef = useRef<HTMLInputElement>(null);
+  const newFacilityFileInputRef = useRef<HTMLInputElement>(null);
   const [activeFacilityIdForUpload, setActiveFacilityIdForUpload] = useState<string | null>(null);
+  const [facilityStatusMessage, setFacilityStatusMessage] = useState<string>('');
+  const [showAddFacilityForm, setShowAddFacilityForm] = useState(false);
+  const [newFacilityTitle, setNewFacilityTitle] = useState('');
+  const [newFacilityImageUrl, setNewFacilityImageUrl] = useState('');
 
   // Founder photo URL input
   const [founderPhotoUrlInput, setFounderPhotoUrlInput] = useState('');
@@ -1293,14 +1300,131 @@ export const AdminModal: React.FC<AdminModalProps> = ({
               {/* TAB 6: FACILITIES & ROOMS */}
               {activeTab === 'facilities' && (
                 <div className="space-y-6">
-                  <div className="border-b border-slate-200 pb-3">
-                    <h4 className="text-lg font-bold text-slate-900 font-heading">
-                      Facilities &amp; Rooms Photos (Upload &amp; Link)
-                    </h4>
-                    <p className="text-xs text-slate-500">
-                      Upload photos directly from your device or paste web links for the facility categories shown on the homepage.
-                    </p>
+                  <div className="border-b border-slate-200 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <h4 className="text-lg font-bold text-slate-900 font-heading">
+                        Facilities &amp; Rooms Photos (Upload &amp; Link)
+                      </h4>
+                      <p className="text-xs text-slate-500">
+                        Upload photos directly from your device or paste web links for the facility categories shown on the homepage. Changes appear immediately in "OUR FACILITIES"!
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowAddFacilityForm(!showAddFacilityForm)}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#0A413D] hover:bg-[#072f2c] text-white text-xs font-semibold rounded-xl shadow-xs transition-colors shrink-0 cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>{showAddFacilityForm ? 'Cancel' : 'Add New Facility Photo'}</span>
+                    </button>
                   </div>
+
+                  {facilityStatusMessage && (
+                    <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold flex items-center justify-between shadow-xs">
+                      <span>✓ {facilityStatusMessage}</span>
+                      <button onClick={() => setFacilityStatusMessage('')} className="text-emerald-700 hover:text-emerald-900 cursor-pointer">✕</button>
+                    </div>
+                  )}
+
+                  {/* Add New Facility Form */}
+                  {showAddFacilityForm && (
+                    <div className="p-4 rounded-2xl bg-teal-50/70 border border-teal-200 space-y-3">
+                      <h5 className="text-xs font-bold text-teal-900 uppercase tracking-wider">
+                        Add New Room / Facility Photo
+                      </h5>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-700 mb-1">Facility / Room Title *</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Recreation Hall, Dining Area"
+                            value={newFacilityTitle}
+                            onChange={(e) => setNewFacilityTitle(e.target.value)}
+                            className="w-full px-3 py-2 bg-white rounded-lg border border-teal-200 text-xs"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-700 mb-1">Photo URL or Upload *</label>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              placeholder="https://... or click Upload"
+                              value={newFacilityImageUrl}
+                              onChange={(e) => setNewFacilityImageUrl(e.target.value)}
+                              className="flex-1 px-3 py-2 bg-white rounded-lg border border-teal-200 text-xs font-mono"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => newFacilityFileInputRef.current?.click()}
+                              className="px-3 py-2 bg-teal-800 hover:bg-teal-900 text-white text-xs font-semibold rounded-lg flex items-center gap-1 shrink-0 cursor-pointer"
+                            >
+                              <Upload className="w-3.5 h-3.5" />
+                              <span>Upload</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <input
+                        ref={newFacilityFileInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            handleFileUpload(file, (dataUrl) => {
+                              setNewFacilityImageUrl(dataUrl);
+                              setFacilityStatusMessage('Photo uploaded from device. Click "Save Facility" below.');
+                            });
+                          }
+                          e.target.value = '';
+                        }}
+                      />
+
+                      {newFacilityImageUrl && (
+                        <div className="w-32 h-20 rounded-lg overflow-hidden border border-teal-300 bg-white">
+                          <img src={newFacilityImageUrl} alt="Preview" className="w-full h-full object-cover" />
+                        </div>
+                      )}
+
+                      <div className="flex justify-end gap-2 pt-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowAddFacilityForm(false);
+                            setNewFacilityTitle('');
+                            setNewFacilityImageUrl('');
+                          }}
+                          className="px-3 py-1.5 text-xs text-slate-600 hover:text-slate-800 font-medium"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          disabled={!newFacilityTitle.trim() || !newFacilityImageUrl.trim()}
+                          onClick={async () => {
+                            if (!newFacilityTitle.trim() || !newFacilityImageUrl.trim()) return;
+                            await addFacility({
+                              title: newFacilityTitle.trim(),
+                              imageUrl: newFacilityImageUrl.trim(),
+                              description: 'Dedicated healing facility at Borbhiti campus.',
+                              highlights: ['Safe Environment', 'Clean & Sanitized']
+                            });
+                            setNewFacilityTitle('');
+                            setNewFacilityImageUrl('');
+                            setShowAddFacilityForm(false);
+                            setFacilityStatusMessage('New facility photo added successfully! Visible now in OUR FACILITIES.');
+                            setTimeout(() => setFacilityStatusMessage(''), 4000);
+                          }}
+                          className="px-4 py-1.5 bg-[#0A413D] hover:bg-[#072f2c] text-white text-xs font-bold rounded-lg shadow-sm disabled:opacity-50 cursor-pointer"
+                        >
+                          Save Facility
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   <input
                     ref={facilityFileInputRef}
@@ -1310,18 +1434,22 @@ export const AdminModal: React.FC<AdminModalProps> = ({
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file && activeFacilityIdForUpload) {
-                        handleFileUpload(file, (dataUrl) => {
-                          updateFacility(activeFacilityIdForUpload, { imageUrl: dataUrl });
+                        const targetId = activeFacilityIdForUpload;
+                        handleFileUpload(file, async (dataUrl) => {
+                          await updateFacility(targetId, { imageUrl: dataUrl });
                           setActiveFacilityIdForUpload(null);
+                          setFacilityStatusMessage('Facility photo updated successfully! Visible now in OUR FACILITIES.');
+                          setTimeout(() => setFacilityStatusMessage(''), 4000);
                         });
                       }
+                      e.target.value = '';
                     }}
                   />
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {facilities.map((fac) => (
-                      <div key={fac.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
-                        <div className="aspect-[4/3] rounded-xl overflow-hidden bg-slate-200 border border-slate-300 relative group">
+                      <div key={fac.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3 relative group">
+                        <div className="aspect-[4/3] rounded-xl overflow-hidden bg-slate-200 border border-slate-300 relative">
                           <img src={fac.imageUrl} alt={fac.title} className="w-full h-full object-cover" />
                           <button
                             type="button"
@@ -1329,28 +1457,51 @@ export const AdminModal: React.FC<AdminModalProps> = ({
                               setActiveFacilityIdForUpload(fac.id);
                               facilityFileInputRef.current?.click();
                             }}
-                            className="absolute bottom-2 right-2 px-3 py-1.5 bg-[#0A413D]/90 hover:bg-[#0A413D] text-white text-xs font-semibold rounded-lg shadow-md flex items-center gap-1.5 backdrop-blur-xs transition-transform active:scale-95"
+                            className="absolute bottom-2 right-2 px-3 py-1.5 bg-[#0A413D]/95 hover:bg-[#0A413D] text-white text-xs font-semibold rounded-lg shadow-md flex items-center gap-1.5 backdrop-blur-xs transition-transform active:scale-95 cursor-pointer"
                           >
                             <Upload className="w-3.5 h-3.5" />
                             <span>Upload Photo</span>
                           </button>
                         </div>
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-700 mb-1">Room / Facility Title</label>
-                          <input
-                            type="text"
-                            value={fac.title}
-                            onChange={(e) => updateFacility(fac.id, { title: e.target.value })}
-                            className="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs"
-                          />
+
+                        <div className="flex items-center justify-between gap-2">
+                          <label className="block text-xs font-semibold text-slate-700">Room / Facility Title</label>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (window.confirm(`Delete facility photo "${fac.title}"?`)) {
+                                deleteFacility(fac.id);
+                                setFacilityStatusMessage(`"${fac.title}" deleted.`);
+                                setTimeout(() => setFacilityStatusMessage(''), 3000);
+                              }
+                            }}
+                            className="text-rose-600 hover:text-rose-800 text-[11px] font-medium flex items-center gap-1 cursor-pointer"
+                            title="Remove facility"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            <span>Delete</span>
+                          </button>
                         </div>
+
+                        <input
+                          type="text"
+                          value={fac.title}
+                          onChange={(e) => updateFacility(fac.id, { title: e.target.value })}
+                          className="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-medium"
+                        />
+
                         <div>
                           <label className="block text-xs font-semibold text-slate-700 mb-1">Photo Link / URL</label>
                           <div className="flex gap-2">
                             <input
                               type="text"
                               value={fac.imageUrl}
-                              onChange={(e) => updateFacility(fac.id, { imageUrl: e.target.value })}
+                              onChange={async (e) => {
+                                const val = e.target.value;
+                                await updateFacility(fac.id, { imageUrl: val });
+                                setFacilityStatusMessage('Facility photo URL updated.');
+                                setTimeout(() => setFacilityStatusMessage(''), 2500);
+                              }}
                               placeholder="Paste photo link or use Upload button above"
                               className="flex-1 px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-mono"
                             />
@@ -1360,7 +1511,7 @@ export const AdminModal: React.FC<AdminModalProps> = ({
                                 setActiveFacilityIdForUpload(fac.id);
                                 facilityFileInputRef.current?.click();
                               }}
-                              className="px-2.5 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-semibold rounded-lg shrink-0 flex items-center gap-1"
+                              className="px-2.5 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-semibold rounded-lg shrink-0 flex items-center gap-1 cursor-pointer"
                               title="Upload from device"
                             >
                               <Upload className="w-3 h-3" />

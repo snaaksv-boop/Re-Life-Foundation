@@ -44,7 +44,9 @@ interface ContentContextType {
 
   facilities: FacilityItem[];
   setFacilities: (facilities: FacilityItem[]) => void;
-  updateFacility: (id: string, updates: Partial<FacilityItem>) => void;
+  updateFacility: (id: string, updates: Partial<FacilityItem>) => Promise<void> | void;
+  addFacility: (facility: Omit<FacilityItem, 'id'>) => Promise<void> | void;
+  deleteFacility: (id: string) => void;
 
   gallery: GalleryPhoto[];
   addGalleryPhoto: (photo: Omit<GalleryPhoto, 'id'>) => void;
@@ -414,9 +416,35 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     });
   };
 
-  const updateFacility = (id: string, updates: Partial<FacilityItem>) => {
+  const updateFacility = async (id: string, updates: Partial<FacilityItem>) => {
+    let safeUpdates = { ...updates };
+    if (updates.imageUrl) {
+      safeUpdates.imageUrl = (await ensureSafeImageSize(updates.imageUrl)) || updates.imageUrl;
+    }
     setFacilities(prev => {
-      const updated = prev.map(f => f.id === id ? { ...f, ...updates } : f);
+      const updated = prev.map(f => f.id === id ? { ...f, ...safeUpdates } : f);
+      syncSectionToCloud('facilities', { data: updated });
+      return updated;
+    });
+  };
+
+  const addFacility = async (facility: Omit<FacilityItem, 'id'>) => {
+    const safeImageUrl = (await ensureSafeImageSize(facility.imageUrl)) || facility.imageUrl;
+    const newFacility: FacilityItem = {
+      ...facility,
+      imageUrl: safeImageUrl,
+      id: `fac-${Date.now()}`
+    };
+    setFacilities(prev => {
+      const updated = [...prev, newFacility];
+      syncSectionToCloud('facilities', { data: updated });
+      return updated;
+    });
+  };
+
+  const deleteFacility = (id: string) => {
+    setFacilities(prev => {
+      const updated = prev.filter(f => f.id !== id);
       syncSectionToCloud('facilities', { data: updated });
       return updated;
     });
@@ -616,6 +644,8 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         facilities,
         setFacilities,
         updateFacility,
+        addFacility,
+        deleteFacility,
         gallery,
         addGalleryPhoto,
         deleteGalleryPhoto,
