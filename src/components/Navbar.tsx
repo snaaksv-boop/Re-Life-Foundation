@@ -60,7 +60,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenHelpModal, onOpenAdminModa
         <a
           href="#home"
           onClick={(e) => handleNavClick(e, 'home')}
-          className="focus:outline-none"
+          className="focus:outline-none shrink-0"
         >
           <Logo variant="light" />
         </a>
@@ -86,14 +86,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenHelpModal, onOpenAdminModa
           })}
         </nav>
 
-        {/* Right side Amber Button "Get Help Now" and 3-line menu toggle */}
-        <div className="flex items-center gap-2.5">
+        {/* Right side: Exactly ONE Amber "Get Help Now" button + 3-line menu toggle */}
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <button
             id="navbar-get-help-btn"
             onClick={onOpenHelpModal}
-            className="flex items-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg bg-[#D97706] hover:bg-amber-600 active:bg-amber-700 text-white font-semibold text-xs sm:text-sm shadow-md transition-all duration-200 cursor-pointer"
+            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-lg bg-[#D97706] hover:bg-amber-600 active:bg-amber-700 text-white font-semibold text-xs sm:text-sm shadow-md transition-all duration-200 cursor-pointer whitespace-nowrap"
           >
-            <PhoneCall className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
+            <PhoneCall className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white shrink-0" />
             <span>Get Help Now</span>
           </button>
 
@@ -101,7 +101,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenHelpModal, onOpenAdminModa
           <button
             id="navbar-menu-toggle"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 text-teal-100 hover:text-white rounded-lg hover:bg-teal-900/60 focus:outline-none transition-colors cursor-pointer"
+            className="p-2 text-teal-100 hover:text-white rounded-lg hover:bg-teal-900/60 focus:outline-none transition-colors cursor-pointer shrink-0"
             aria-label="Toggle Menu"
             title="Menu (3 Lines)"
           >
