@@ -124,7 +124,8 @@ export const AdminModal: React.FC<AdminModalProps> = ({
     name: founder.name,
     title: founder.title,
     quote: founder.quote,
-    message: founder.message
+    message: founder.message,
+    photoUrl: founder.photoUrl
   });
   const [founderSaved, setFounderSaved] = useState(false);
   const founderFileRef = useRef<HTMLInputElement>(null);
@@ -132,7 +133,7 @@ export const AdminModal: React.FC<AdminModalProps> = ({
   const heroFileRef = useRef<HTMLInputElement>(null);
   const logoFileRef = useRef<HTMLInputElement>(null);
 
-  // Sync state if orgInfo/aboutData updates
+  // Sync state if orgInfo/aboutData/founder updates
   useEffect(() => {
     setAboutForm({ ...aboutData });
   }, [aboutData]);
@@ -140,6 +141,16 @@ export const AdminModal: React.FC<AdminModalProps> = ({
   useEffect(() => {
     setGeneralForm({ ...orgInfo });
   }, [orgInfo]);
+
+  useEffect(() => {
+    setFounderForm({
+      name: founder.name,
+      title: founder.title,
+      quote: founder.quote,
+      message: founder.message,
+      photoUrl: founder.photoUrl
+    });
+  }, [founder]);
 
   useEffect(() => {
     if (defaultTab || initialTab) {
@@ -283,9 +294,9 @@ export const AdminModal: React.FC<AdminModalProps> = ({
   };
 
   // Founder profile save handler
-  const handleSaveFounder = (e: React.FormEvent) => {
+  const handleSaveFounder = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateFounder(founderForm);
+    await updateFounder(founderForm);
     setFounderSaved(true);
     setTimeout(() => setFounderSaved(false), 3000);
   };
@@ -293,7 +304,7 @@ export const AdminModal: React.FC<AdminModalProps> = ({
   // File upload helper with automatic image compression to preserve storage and Firestore doc limits
   const handleFileUpload = async (file: File, callback: (result: string) => void) => {
     try {
-      const compressed = await compressImage(file, 1000, 1000, 0.75);
+      const compressed = await compressImage(file, 800, 800, 0.72);
       callback(compressed);
     } catch (err) {
       console.warn("Image compression failed, using standard reader", err);
@@ -1136,9 +1147,11 @@ export const AdminModal: React.FC<AdminModalProps> = ({
                           />
                           <button
                             type="button"
-                            onClick={() => {
-                              if (founderPhotoUrlInput) {
-                                setFounderPhoto(founderPhotoUrlInput);
+                            onClick={async () => {
+                              if (founderPhotoUrlInput.trim()) {
+                                const url = founderPhotoUrlInput.trim();
+                                await setFounderPhoto(url);
+                                setFounderForm(prev => ({ ...prev, photoUrl: url }));
                                 setFounderPhotoUrlInput('');
                               }
                             }}
@@ -1161,8 +1174,9 @@ export const AdminModal: React.FC<AdminModalProps> = ({
                           {founder.photoUrl && (
                             <button
                               type="button"
-                              onClick={() => {
-                                setFounderPhoto(null);
+                              onClick={async () => {
+                                await setFounderPhoto(null);
+                                setFounderForm(prev => ({ ...prev, photoUrl: null }));
                                 setFounderPhotoUrlInput('');
                               }}
                               className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold rounded-xl border border-rose-200"
@@ -1178,11 +1192,13 @@ export const AdminModal: React.FC<AdminModalProps> = ({
                             onChange={(e) => {
                               const file = e.target.files?.[0];
                               if (file) {
-                                handleFileUpload(file, (dataUrl) => {
-                                  setFounderPhoto(dataUrl);
+                                handleFileUpload(file, async (dataUrl) => {
+                                  await setFounderPhoto(dataUrl);
+                                  setFounderForm(prev => ({ ...prev, photoUrl: dataUrl }));
                                   setFounderPhotoUrlInput('');
                                 });
                               }
+                              e.target.value = '';
                             }}
                           />
                         </div>

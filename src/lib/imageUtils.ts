@@ -4,13 +4,16 @@
  */
 export async function compressImage(
   input: File | string,
-  maxWidth: number = 1000,
-  maxHeight: number = 1000,
-  quality: number = 0.75
+  maxWidth: number = 800,
+  maxHeight: number = 800,
+  quality: number = 0.72
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = 'anonymous';
+    // Do not set crossOrigin for data URLs as it can cause security warnings in some mobile browsers
+    if (typeof input === 'string' && !input.startsWith('data:')) {
+      img.crossOrigin = 'anonymous';
+    }
 
     img.onload = () => {
       let width = img.width;
@@ -19,8 +22,8 @@ export async function compressImage(
       // Calculate new dimensions maintaining aspect ratio
       if (width > maxWidth || height > maxHeight) {
         const ratio = Math.min(maxWidth / width, maxHeight / height);
-        width = Math.round(width * ratio);
-        height = Math.round(height * ratio);
+        width = Math.max(1, Math.round(width * ratio));
+        height = Math.max(1, Math.round(height * ratio));
       }
 
       const canvas = document.createElement('canvas');
@@ -71,13 +74,13 @@ export async function compressImage(
 
 export async function ensureSafeImageSize(
   imageStr: string | null | undefined,
-  maxSizeBytes: number = 300000
+  maxSizeBytes: number = 250000
 ): Promise<string | null> {
   if (!imageStr) return null;
   if (!imageStr.startsWith('data:image')) return imageStr;
   if (imageStr.length <= maxSizeBytes) return imageStr;
   try {
-    const compressed = await compressImage(imageStr, 800, 800, 0.65);
+    const compressed = await compressImage(imageStr, 720, 720, 0.68);
     return compressed;
   } catch {
     return imageStr;

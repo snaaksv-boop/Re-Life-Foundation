@@ -1,6 +1,7 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { useContent } from '../context/ContentContext';
-import { Camera, Upload, Quote, CheckCircle2, User, Sparkles } from 'lucide-react';
+import { Camera, Upload, Quote, CheckCircle2, User, Sparkles, Loader2 } from 'lucide-react';
+import { compressImage } from '../lib/imageUtils';
 
 interface FounderSectionProps {
   onOpenEditFounder: () => void;
@@ -9,18 +10,29 @@ interface FounderSectionProps {
 export const FounderSection: React.FC<FounderSectionProps> = ({ onOpenEditFounder }) => {
   const { founder, setFounderPhoto } = useContent();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (typeof reader.result === 'string') {
-          setFounderPhoto(reader.result);
-        }
-      };
-      reader.readAsDataURL(file);
+      setIsUploading(true);
+      try {
+        const compressed = await compressImage(file, 800, 800, 0.72);
+        await setFounderPhoto(compressed);
+      } catch (err) {
+        console.warn('Compression fallback', err);
+        const reader = new FileReader();
+        reader.onload = async () => {
+          if (typeof reader.result === 'string') {
+            await setFounderPhoto(reader.result);
+          }
+        };
+        reader.readAsDataURL(file);
+      } finally {
+        setIsUploading(false);
+      }
     }
+    e.target.value = '';
   };
 
   return (
@@ -107,10 +119,11 @@ export const FounderSection: React.FC<FounderSectionProps> = ({ onOpenEditFounde
                   {/* Camera icon button to trigger upload */}
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="absolute bottom-4 right-4 sm:bottom-5 sm:right-5 p-3 rounded-full bg-teal-800 hover:bg-teal-700 text-white shadow-lg border-2 border-white hover:scale-105 active:scale-95 transition-all"
+                    disabled={isUploading}
+                    className="absolute bottom-4 right-4 sm:bottom-5 sm:right-5 p-3 rounded-full bg-teal-800 hover:bg-teal-700 text-white shadow-lg border-2 border-white hover:scale-105 active:scale-95 transition-all disabled:opacity-75"
                     title="Upload / Change Founder Photo"
                   >
-                    <Camera className="w-5 h-5" />
+                    {isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
                   </button>
 
                   <input

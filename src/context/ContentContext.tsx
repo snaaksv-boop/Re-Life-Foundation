@@ -328,7 +328,20 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const docData = docSnap.data();
         if (section === 'about' && docData.data) setAboutData(docData.data);
         else if (section === 'orgInfo' && docData.data) setOrgInfo(docData.data);
-        else if (section === 'founder' && docData.data) setFounder(docData.data);
+        else if (section === 'founder' && docData.data) {
+          const cloudFounder = docData.data as FounderInfo;
+          setFounder(prev => {
+            // Prevent accidental deletion:
+            // If the incoming cloud data has no photoUrl (or null/empty), but the local user
+            // already has a valid photoUrl, preserve the local photo and sync it to the cloud.
+            if (!cloudFounder.photoUrl && prev.photoUrl) {
+              const healed = { ...cloudFounder, photoUrl: prev.photoUrl };
+              syncSectionToCloud('founder', { data: healed });
+              return healed;
+            }
+            return cloudFounder;
+          });
+        }
         else if (section === 'programs' && docData.data) setPrograms(docData.data);
         else if (section === 'facilities' && docData.data) setFacilities(docData.data);
         else if (section === 'gallery' && docData.data) setGallery(sortGalleryNewestFirst(docData.data));
@@ -391,18 +404,33 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     });
   };
 
-  const updateFounder = (updates: Partial<FounderInfo>) => {
+  const updateFounder = async (updates: Partial<FounderInfo>) => {
+    let safeUpdates = { ...updates };
+    if (updates.photoUrl) {
+      safeUpdates.photoUrl = (await ensureSafeImageSize(updates.photoUrl, 250000)) || updates.photoUrl;
+    }
     setFounder(prev => {
-      const updated = { ...prev, ...updates };
+      const photoUrl = updates.photoUrl !== undefined ? safeUpdates.photoUrl : prev.photoUrl;
+      const updated = { ...prev, ...safeUpdates, photoUrl };
+      try {
+        localStorage.setItem(`${STORAGE_KEY_PREFIX}founder`, JSON.stringify(updated));
+      } catch (err) {
+        console.warn('Could not cache founder in localStorage', err);
+      }
       syncSectionToCloud('founder', { data: updated });
       return updated;
     });
   };
 
   const setFounderPhoto = async (dataUrl: string | null) => {
-    const safePhoto = await ensureSafeImageSize(dataUrl);
+    const safePhoto = dataUrl ? (await ensureSafeImageSize(dataUrl, 250000)) : null;
     setFounder(prev => {
       const updated = { ...prev, photoUrl: safePhoto };
+      try {
+        localStorage.setItem(`${STORAGE_KEY_PREFIX}founder`, JSON.stringify(updated));
+      } catch (err) {
+        console.warn('Could not cache founder in localStorage', err);
+      }
       syncSectionToCloud('founder', { data: updated });
       return updated;
     });
