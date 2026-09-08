@@ -1,11 +1,33 @@
-import React, { useState } from 'react';
-import { Play, User, X } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Play, User, X, Camera, Check, Loader2 } from 'lucide-react';
 import { useContent } from '../context/ContentContext';
 import { VideoItem } from '../types';
+import { compressImage } from '../lib/imageUtils';
 
 export const VideosAndFounderSection: React.FC = () => {
-  const { founder, videos } = useContent();
+  const { founder, videos, updateFounder, setFounderPhoto } = useContent();
   const [activeVideo, setActiveVideo] = useState<VideoItem | null>(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingPhoto(true);
+    try {
+      const compressed = await compressImage(file, 640, 640, 0.65);
+      await setFounderPhoto(compressed);
+      await updateFounder({ photoUrl: compressed });
+      setUploadSuccess(true);
+      setTimeout(() => setUploadSuccess(false), 3000);
+    } catch (err) {
+      console.error('Error uploading founder photo:', err);
+    } finally {
+      setIsUploadingPhoto(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   // Helper to detect if video is an embed link (YouTube / Vimeo) or direct video file
   const getEmbedInfo = (url: string) => {
@@ -87,8 +109,8 @@ export const VideosAndFounderSection: React.FC = () => {
                 </h3>
               </div>
 
-              {/* Founder Circular Golden Ring Frame */}
-              <div className="relative w-36 h-36 rounded-full border-2 border-amber-400 p-1 bg-slate-50 flex items-center justify-center my-2 shadow-inner">
+              {/* Founder Circular Golden Ring Frame with Quick Photo Change */}
+              <div className="relative w-36 h-36 rounded-full border-2 border-amber-400 p-1 bg-slate-50 flex items-center justify-center my-2 shadow-inner group">
                 {founder.photoUrl ? (
                   <img
                     src={founder.photoUrl}
@@ -104,7 +126,39 @@ export const VideosAndFounderSection: React.FC = () => {
                     </span>
                   </div>
                 )}
+
+                {/* Direct photo upload trigger button */}
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handlePhotoUpload}
+                  accept="image/*"
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploadingPhoto}
+                  className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white flex items-center justify-center shadow-md border-2 border-white transition-all transform hover:scale-110 cursor-pointer"
+                  title="Change Founder Photo"
+                  aria-label="Upload founder photo"
+                >
+                  {isUploadingPhoto ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : uploadSuccess ? (
+                    <Check className="w-4 h-4 text-white" />
+                  ) : (
+                    <Camera className="w-4 h-4" />
+                  )}
+                </button>
               </div>
+
+              {uploadSuccess && (
+                <div className="text-xs font-semibold text-emerald-600 animate-in fade-in flex items-center gap-1 mt-1">
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Photo saved and synced!</span>
+                </div>
+              )}
 
               {/* Quote */}
               <p className="text-xs sm:text-sm text-slate-600 italic mt-4 font-normal">

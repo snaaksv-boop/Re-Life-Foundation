@@ -26,7 +26,7 @@ export default function App() {
 
   return (
     <ContentProvider>
-      <div className="min-h-screen bg-white text-slate-800 flex flex-col selection:bg-teal-800 selection:text-white relative">
+      <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-white text-slate-800 flex flex-col selection:bg-teal-800 selection:text-white relative">
         
         {/* Navbar */}
         <Navbar
@@ -35,7 +35,7 @@ export default function App() {
         />
 
         {/* Main Sections matching the exact reference screenshot */}
-        <main className="flex-1">
+        <main className="flex-1 w-full max-w-full overflow-x-hidden">
           {/* 1. Hero Section */}
           <Hero
             onOpenHelpModal={() => setIsHelpModalOpen(true)}

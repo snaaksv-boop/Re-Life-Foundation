@@ -16,17 +16,17 @@ export const Logo: React.FC<LogoProps> = ({
   const isDark = variant === 'dark';
 
   return (
-    <div className={`flex items-center gap-3 cursor-pointer select-none ${className}`}>
+    <div className={`flex items-center gap-2 sm:gap-3 cursor-pointer select-none max-w-full ${className}`}>
       {logoUrl ? (
         <img
           src={logoUrl}
           alt="Re-Life Foundation Logo"
-          className="w-11 h-11 rounded-full object-cover shadow-sm border border-slate-200 shrink-0"
+          className="w-9 h-9 sm:w-11 sm:h-11 rounded-full object-cover shadow-sm border border-slate-200 shrink-0"
           referrerPolicy="no-referrer"
         />
       ) : (
         /* White circular badge as shown in the screenshot */
-        <div className="w-11 h-11 rounded-full bg-white flex items-center justify-center p-1 shadow-sm border border-slate-200 shrink-0">
+        <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white flex items-center justify-center p-0.5 sm:p-1 shadow-sm border border-slate-200 shrink-0">
           <svg
             viewBox="0 0 100 100"
             className="w-full h-full fill-none"
@@ -54,16 +54,16 @@ export const Logo: React.FC<LogoProps> = ({
       )}
 
       {/* Brand Typography strictly matching screenshot: "Re-Life Foundation" and "Rehabilitation & De-Addiction Centre" */}
-      <div className="flex flex-col text-left">
+      <div className="flex flex-col text-left min-w-0">
         <span
-          className={`font-heading font-bold text-lg sm:text-xl leading-none tracking-tight ${
+          className={`font-heading font-bold text-base sm:text-xl leading-none tracking-tight truncate ${
             isDark ? 'text-slate-900' : 'text-white'
           }`}
         >
           Re-Life Foundation
         </span>
         <span
-          className={`text-[11px] sm:text-xs font-normal leading-tight mt-1 tracking-normal ${
+          className={`text-[10px] sm:text-xs font-normal leading-tight mt-0.5 sm:mt-1 tracking-normal hidden min-[360px]:block truncate max-w-[150px] sm:max-w-none ${
             isDark ? 'text-teal-700' : 'text-teal-200/90'
           }`}
         >

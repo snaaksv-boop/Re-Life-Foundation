@@ -332,7 +332,7 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
           const cloudFounder = docData.data as FounderInfo;
           setFounder(prev => {
             // Prevent accidental deletion:
-            // If the incoming cloud data has no photoUrl (or null/empty), but the local user
+            // If the incoming cloud data has no photoUrl (or null/empty/default), but the local user
             // already has a valid photoUrl, preserve the local photo and sync it to the cloud.
             if (!cloudFounder.photoUrl && prev.photoUrl) {
               const healed = { ...cloudFounder, photoUrl: prev.photoUrl };
@@ -343,8 +343,38 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
           });
         }
         else if (section === 'programs' && docData.data) setPrograms(docData.data);
-        else if (section === 'facilities' && docData.data) setFacilities(docData.data);
-        else if (section === 'gallery' && docData.data) setGallery(sortGalleryNewestFirst(docData.data));
+        else if (section === 'facilities' && docData.data) {
+          const cloudFacilities = docData.data as FacilityItem[];
+          setFacilities(prev => {
+            if (!cloudFacilities || cloudFacilities.length === 0) return prev;
+            const cloudMap = new Map(cloudFacilities.map(f => [f.id, f]));
+            // Preserve customized user photos in facilities if cloud hasn't received them yet
+            const merged = prev.map(localFac => {
+              const cloudFac = cloudMap.get(localFac.id);
+              if (!cloudFac) return localFac;
+              if (localFac.imageUrl?.startsWith('data:image') && !cloudFac.imageUrl?.startsWith('data:image')) {
+                return { ...cloudFac, imageUrl: localFac.imageUrl };
+              }
+              return cloudFac;
+            });
+            return merged;
+          });
+        }
+        else if (section === 'gallery' && docData.data) {
+          const cloudGallery = sortGalleryNewestFirst(docData.data as GalleryPhoto[]);
+          setGallery(prev => {
+            if (!cloudGallery || cloudGallery.length === 0) return prev;
+            // Prevent cloud snapshot from wiping out newly added local photos
+            const cloudIds = new Set(cloudGallery.map(p => p.id));
+            const localOnly = prev.filter(p => !cloudIds.has(p.id) && (p.createdAt || p.id.startsWith('gal-')));
+            if (localOnly.length > 0) {
+              const merged = sortGalleryNewestFirst([...localOnly, ...cloudGallery]);
+              syncSectionToCloud('gallery', { data: merged });
+              return merged;
+            }
+            return cloudGallery;
+          });
+        }
         else if (section === 'videos' && docData.data) setVideos(docData.data);
         else if (section === 'testimonials' && docData.data) setTestimonials(docData.data);
         else if (section === 'branding') {
@@ -378,8 +408,8 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const syncSectionToCloud = async (section: string, payload: Record<string, unknown>) => {
     try {
       const payloadStr = JSON.stringify(payload);
-      if (payloadStr.length > 800000) {
-        console.warn(`[Cloud Sync] Skipped writing to section '${section}': payload size (${payloadStr.length} bytes) exceeds 800KB safe limit.`);
+      if (payloadStr.length > 950000) {
+        console.warn(`[Cloud Sync] Skipped writing to section '${section}': payload size (${payloadStr.length} bytes) exceeds safe limit.`);
         return;
       }
       await setDoc(doc(db, 'siteContent', section), payload, { merge: true });
@@ -407,7 +437,7 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const updateFounder = async (updates: Partial<FounderInfo>) => {
     let safeUpdates = { ...updates };
     if (updates.photoUrl) {
-      safeUpdates.photoUrl = (await ensureSafeImageSize(updates.photoUrl, 250000)) || updates.photoUrl;
+      safeUpdates.photoUrl = (await ensureSafeImageSize(updates.photoUrl, 70000)) || updates.photoUrl;
     }
     setFounder(prev => {
       const photoUrl = updates.photoUrl !== undefined ? safeUpdates.photoUrl : prev.photoUrl;
@@ -423,7 +453,7 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const setFounderPhoto = async (dataUrl: string | null) => {
-    const safePhoto = dataUrl ? (await ensureSafeImageSize(dataUrl, 250000)) : null;
+    const safePhoto = dataUrl ? (await ensureSafeImageSize(dataUrl, 70000)) : null;
     setFounder(prev => {
       const updated = { ...prev, photoUrl: safePhoto };
       try {
@@ -447,17 +477,22 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const updateFacility = async (id: string, updates: Partial<FacilityItem>) => {
     let safeUpdates = { ...updates };
     if (updates.imageUrl) {
-      safeUpdates.imageUrl = (await ensureSafeImageSize(updates.imageUrl)) || updates.imageUrl;
+      safeUpdates.imageUrl = (await ensureSafeImageSize(updates.imageUrl, 70000)) || updates.imageUrl;
     }
     setFacilities(prev => {
       const updated = prev.map(f => f.id === id ? { ...f, ...safeUpdates } : f);
+      try {
+        localStorage.setItem(`${STORAGE_KEY_PREFIX}facilities`, JSON.stringify(updated));
+      } catch (e) {
+        console.warn("Storage save error", e);
+      }
       syncSectionToCloud('facilities', { data: updated });
       return updated;
     });
   };
 
   const addFacility = async (facility: Omit<FacilityItem, 'id'>) => {
-    const safeImageUrl = (await ensureSafeImageSize(facility.imageUrl)) || facility.imageUrl;
+    const safeImageUrl = (await ensureSafeImageSize(facility.imageUrl, 70000)) || facility.imageUrl;
     const newFacility: FacilityItem = {
       ...facility,
       imageUrl: safeImageUrl,
@@ -465,6 +500,11 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
     setFacilities(prev => {
       const updated = [...prev, newFacility];
+      try {
+        localStorage.setItem(`${STORAGE_KEY_PREFIX}facilities`, JSON.stringify(updated));
+      } catch (e) {
+        console.warn("Storage save error", e);
+      }
       syncSectionToCloud('facilities', { data: updated });
       return updated;
     });
@@ -473,13 +513,18 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const deleteFacility = (id: string) => {
     setFacilities(prev => {
       const updated = prev.filter(f => f.id !== id);
+      try {
+        localStorage.setItem(`${STORAGE_KEY_PREFIX}facilities`, JSON.stringify(updated));
+      } catch (e) {
+        console.warn("Storage save error", e);
+      }
       syncSectionToCloud('facilities', { data: updated });
       return updated;
     });
   };
 
   const addGalleryPhoto = async (photo: Omit<GalleryPhoto, 'id'>) => {
-    const safeImageUrl = (await ensureSafeImageSize(photo.imageUrl)) || photo.imageUrl;
+    const safeImageUrl = (await ensureSafeImageSize(photo.imageUrl, 70000)) || photo.imageUrl;
     const now = Date.now();
     const newPhoto: GalleryPhoto = {
       ...photo,
@@ -491,6 +536,11 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       // The new photo is placed strictly at index 0 (1st in line)
       const filtered = prev.filter(p => p.id !== newPhoto.id);
       const updated = [newPhoto, ...filtered];
+      try {
+        localStorage.setItem(`${STORAGE_KEY_PREFIX}gallery`, JSON.stringify(updated));
+      } catch (e) {
+        console.warn("Storage save error", e);
+      }
       syncSectionToCloud('gallery', { data: updated });
       return updated;
     });

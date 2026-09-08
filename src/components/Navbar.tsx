@@ -54,13 +54,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenHelpModal, onOpenAdminModa
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-[#052421] border-b border-teal-900/60 shadow-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+    <header className="sticky top-0 z-50 bg-[#052421] border-b border-teal-900/60 shadow-md w-full max-w-full">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3 flex items-center justify-between gap-2">
         {/* Logo matching screenshot */}
         <a
           href="#home"
           onClick={(e) => handleNavClick(e, 'home')}
-          className="focus:outline-none shrink-0"
+          className="focus:outline-none shrink min-w-0"
         >
           <Logo variant="light" />
         </a>
@@ -87,25 +87,26 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenHelpModal, onOpenAdminModa
         </nav>
 
         {/* Right side: Exactly ONE Amber "Get Help Now" button + 3-line menu toggle */}
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           <button
             id="navbar-get-help-btn"
             onClick={onOpenHelpModal}
-            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-lg bg-[#D97706] hover:bg-amber-600 active:bg-amber-700 text-white font-semibold text-xs sm:text-sm shadow-md transition-all duration-200 cursor-pointer whitespace-nowrap"
+            className="flex items-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-[#D97706] hover:bg-amber-600 active:bg-amber-700 text-white font-semibold text-xs sm:text-sm shadow-md transition-all duration-200 cursor-pointer whitespace-nowrap"
           >
             <PhoneCall className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white shrink-0" />
-            <span>Get Help Now</span>
+            <span className="hidden min-[380px]:inline">Get Help Now</span>
+            <span className="min-[380px]:hidden">Get Help</span>
           </button>
 
           {/* 3-line menu button (Hamburger Menu) */}
           <button
             id="navbar-menu-toggle"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 text-teal-100 hover:text-white rounded-lg hover:bg-teal-900/60 focus:outline-none transition-colors cursor-pointer shrink-0"
+            className="p-1.5 sm:p-2 text-teal-100 hover:text-white rounded-lg hover:bg-teal-900/60 focus:outline-none transition-colors cursor-pointer shrink-0"
             aria-label="Toggle Menu"
             title="Menu (3 Lines)"
           >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {mobileMenuOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6" />}
           </button>
         </div>
       </div>

@@ -301,17 +301,22 @@ export const AdminModal: React.FC<AdminModalProps> = ({
     setTimeout(() => setFounderSaved(false), 3000);
   };
 
-  // File upload helper with automatic image compression to preserve storage and Firestore doc limits
+  // File upload helper with automatic image compression to preserve storage and Firestore doc limits (<50KB)
   const handleFileUpload = async (file: File, callback: (result: string) => void) => {
     try {
-      const compressed = await compressImage(file, 800, 800, 0.72);
+      const compressed = await compressImage(file, 640, 640, 0.65);
       callback(compressed);
     } catch (err) {
-      console.warn("Image compression failed, using standard reader", err);
+      console.warn("Image compression failed, using fallback reader", err);
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         if (e.target?.result) {
-          callback(e.target.result as string);
+          try {
+            const comp = await compressImage(e.target.result as string, 640, 640, 0.65);
+            callback(comp);
+          } catch {
+            callback(e.target.result as string);
+          }
         }
       };
       reader.readAsDataURL(file);
